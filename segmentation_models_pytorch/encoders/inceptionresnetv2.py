@@ -4,7 +4,7 @@ Attributes:
 
     _out_channels (list of int): specify number of channels for each encoder feature tensor
     _depth (int): specify number of stages in decoder (in other words number of downsampling operations)
-    _in_channels (int): default number of input channels in first Conv2d layer for encoder (usually 3)
+    _in_channels (int): default number of input channels in first Conv1d layer for encoder (usually 3)
 
 Methods:
 
@@ -40,10 +40,10 @@ class InceptionResNetV2Encoder(InceptionResNetV2, EncoderMixin):
 
         # correct paddings
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv1d):
                 if m.kernel_size == (3, 3):
                     m.padding = (1, 1)
-            if isinstance(m, nn.MaxPool2d):
+            if isinstance(m, nn.Maxpool1d):
                 m.padding = (1, 1)
 
         # remove linear layers
@@ -58,11 +58,11 @@ class InceptionResNetV2Encoder(InceptionResNetV2, EncoderMixin):
     def get_stages(self):
         return [
             nn.Identity(),
-            nn.Sequential(self.conv2d_1a, self.conv2d_2a, self.conv2d_2b),
-            nn.Sequential(self.maxpool_3a, self.conv2d_3b, self.conv2d_4a),
+            nn.Sequential(self.Conv1d_1a, self.Conv1d_2a, self.Conv1d_2b),
+            nn.Sequential(self.maxpool_3a, self.Conv1d_3b, self.Conv1d_4a),
             nn.Sequential(self.maxpool_5a, self.mixed_5b, self.repeat),
             nn.Sequential(self.mixed_6a, self.repeat_1),
-            nn.Sequential(self.mixed_7a, self.repeat_2, self.block8, self.conv2d_7b),
+            nn.Sequential(self.mixed_7a, self.repeat_2, self.block8, self.Conv1d_7b),
         ]
 
     def forward(self, x):

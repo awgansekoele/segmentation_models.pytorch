@@ -1,7 +1,7 @@
 from .model import SegmentationModel
 
 from .modules import (
-    Conv2dReLU,
+    Conv1dReLU,
     Attention,
 )
 

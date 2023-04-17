@@ -26,7 +26,7 @@ class Unet(SegmentationModel):
             other pretrained weights (see table with available weights for each encoder_name)
         decoder_channels: List of integers which specify **in_channels** parameter for convolutions used in decoder.
             Length of the list should be the same as **encoder_depth**
-        decoder_use_batchnorm: If **True**, BatchNorm2d layer between Conv2D and Activation layers
+        decoder_use_batchnorm: If **True**, BatchNorm1d layer between Conv1d and Activation layers
             is used. If **"inplace"** InplaceABN will be used, allows to decrease memory consumption.
             Available options are **True, False, "inplace"**
         decoder_attention_type: Attention module used in decoder of the model. Available options are

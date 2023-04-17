@@ -32,7 +32,7 @@ Each encoder should have following attributes and methods and be inherited from 
             # use in in forward pass to reduce number of returning features
             self._depth: int = 5 
 
-            # Default number of input channels in first Conv2d layer for encoder (usually 3)
+            # Default number of input channels in first Conv1d layer for encoder (usually 3)
             self._in_channels: int = 3 
             
             # Define encoder modules below

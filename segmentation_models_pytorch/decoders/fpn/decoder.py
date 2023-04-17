@@ -8,7 +8,7 @@ class Conv3x3GNReLU(nn.Module):
         super().__init__()
         self.upsample = upsample
         self.block = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, (3, 3), stride=1, padding=1, bias=False),
+            nn.Conv1d(in_channels, out_channels, (3, ), stride=1, padding=1, bias=False),
             nn.GroupNorm(32, out_channels),
             nn.ReLU(inplace=True),
         )
@@ -16,14 +16,14 @@ class Conv3x3GNReLU(nn.Module):
     def forward(self, x):
         x = self.block(x)
         if self.upsample:
-            x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=True)
+            x = F.interpolate(x, scale_factor=2, mode="nearest", align_corners=False)
         return x
 
 
 class FPNBlock(nn.Module):
     def __init__(self, pyramid_channels, skip_channels):
         super().__init__()
-        self.skip_conv = nn.Conv2d(skip_channels, pyramid_channels, kernel_size=1)
+        self.skip_conv = nn.Conv1d(skip_channels, pyramid_channels, kernel_size=1)
 
     def forward(self, x, skip=None):
         x = F.interpolate(x, scale_factor=2, mode="nearest")
@@ -83,7 +83,7 @@ class FPNDecoder(nn.Module):
         encoder_channels = encoder_channels[::-1]
         encoder_channels = encoder_channels[: encoder_depth + 1]
 
-        self.p5 = nn.Conv2d(encoder_channels[0], pyramid_channels, kernel_size=1)
+        self.p5 = nn.Conv1d(encoder_channels[0], pyramid_channels, kernel_size=1)
         self.p4 = FPNBlock(pyramid_channels, encoder_channels[1])
         self.p3 = FPNBlock(pyramid_channels, encoder_channels[2])
         self.p2 = FPNBlock(pyramid_channels, encoder_channels[3])
@@ -96,7 +96,7 @@ class FPNDecoder(nn.Module):
         )
 
         self.merge = MergeBlock(merge_policy)
-        self.dropout = nn.Dropout2d(p=dropout, inplace=True)
+        self.dropout = nn.Dropout1d(p=dropout, inplace=True)
 
     def forward(self, *features):
         c2, c3, c4, c5 = features[-4:]

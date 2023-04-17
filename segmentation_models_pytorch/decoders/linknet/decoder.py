@@ -12,7 +12,7 @@ class TransposeX2(nn.Sequential):
         ]
 
         if use_batchnorm:
-            layers.insert(1, nn.BatchNorm2d(out_channels))
+            layers.insert(1, nn.BatchNorm1d(out_channels))
 
         super().__init__(*layers)
 
@@ -22,14 +22,14 @@ class DecoderBlock(nn.Module):
         super().__init__()
 
         self.block = nn.Sequential(
-            modules.Conv2dReLU(
+            modules.Conv1dReLU(
                 in_channels,
                 in_channels // 4,
                 kernel_size=1,
                 use_batchnorm=use_batchnorm,
             ),
             TransposeX2(in_channels // 4, in_channels // 4, use_batchnorm=use_batchnorm),
-            modules.Conv2dReLU(
+            modules.Conv1dReLU(
                 in_channels // 4,
                 out_channels,
                 kernel_size=1,

@@ -29,10 +29,10 @@ class SEBlock(nn.Module):
         :param rd_ratio: Input channel reduction ratio.
         """
         super(SEBlock, self).__init__()
-        self.reduce = nn.Conv2d(
+        self.reduce = nn.Conv1d(
             in_channels=in_channels, out_channels=int(in_channels * rd_ratio), kernel_size=1, stride=1, bias=True
         )
-        self.expand = nn.Conv2d(
+        self.expand = nn.Conv1d(
             in_channels=int(in_channels * rd_ratio), out_channels=in_channels, kernel_size=1, stride=1, bias=True
         )
 
@@ -101,7 +101,7 @@ class MobileOneBlock(nn.Module):
         self.activation = nn.ReLU()
 
         if inference_mode:
-            self.reparam_conv = nn.Conv2d(
+            self.reparam_conv = nn.Conv1d(
                 in_channels=in_channels,
                 out_channels=out_channels,
                 kernel_size=kernel_size,
@@ -114,7 +114,7 @@ class MobileOneBlock(nn.Module):
         else:
             # Re-parameterizable skip connection
             self.rbr_skip = (
-                nn.BatchNorm2d(num_features=in_channels) if out_channels == in_channels and stride == 1 else None
+                nn.BatchNorm1d(num_features=in_channels) if out_channels == in_channels and stride == 1 else None
             )
 
             # Re-parameterizable conv branches
@@ -161,7 +161,7 @@ class MobileOneBlock(nn.Module):
         if self.inference_mode:
             return
         kernel, bias = self._get_kernel_bias()
-        self.reparam_conv = nn.Conv2d(
+        self.reparam_conv = nn.Conv1d(
             in_channels=self.rbr_conv[0].conv.in_channels,
             out_channels=self.rbr_conv[0].conv.out_channels,
             kernel_size=self.rbr_conv[0].conv.kernel_size,
@@ -232,7 +232,7 @@ class MobileOneBlock(nn.Module):
             beta = branch.bn.bias
             eps = branch.bn.eps
         else:
-            assert isinstance(branch, nn.BatchNorm2d)
+            assert isinstance(branch, nn.BatchNorm1d)
             if not hasattr(self, "id_tensor"):
                 input_dim = self.in_channels // self.groups
                 kernel_value = torch.zeros(
@@ -263,7 +263,7 @@ class MobileOneBlock(nn.Module):
         mod_list = nn.Sequential()
         mod_list.add_module(
             "conv",
-            nn.Conv2d(
+            nn.Conv1d(
                 in_channels=self.in_channels,
                 out_channels=self.out_channels,
                 kernel_size=kernel_size,
@@ -273,7 +273,7 @@ class MobileOneBlock(nn.Module):
                 bias=False,
             ),
         )
-        mod_list.add_module("bn", nn.BatchNorm2d(num_features=self.out_channels))
+        mod_list.add_module("bn", nn.BatchNorm1d(num_features=self.out_channels))
         return mod_list
 
 

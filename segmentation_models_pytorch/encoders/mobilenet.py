@@ -4,7 +4,7 @@ Attributes:
 
     _out_channels (list of int): specify number of channels for each encoder feature tensor
     _depth (int): specify number of stages in decoder (in other words number of downsampling operations)
-    _in_channels (int): default number of input channels in first Conv2d layer for encoder (usually 3)
+    _in_channels (int): default number of input channels in first Conv1d layer for encoder (usually 3)
 
 Methods:
 

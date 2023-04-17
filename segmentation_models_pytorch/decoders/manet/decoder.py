@@ -11,28 +11,27 @@ class PAB(nn.Module):
         # Series of 1x1 conv to generate attention feature maps
         self.pab_channels = pab_channels
         self.in_channels = in_channels
-        self.top_conv = nn.Conv2d(in_channels, pab_channels, kernel_size=1)
-        self.center_conv = nn.Conv2d(in_channels, pab_channels, kernel_size=1)
-        self.bottom_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
+        self.top_conv = nn.Conv1d(in_channels, pab_channels, kernel_size=1)
+        self.center_conv = nn.Conv1d(in_channels, pab_channels, kernel_size=1)
+        self.bottom_conv = nn.Conv1d(in_channels, in_channels, kernel_size=3, padding=1)
         self.map_softmax = nn.Softmax(dim=1)
-        self.out_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
+        self.out_conv = nn.Conv1d(in_channels, in_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
         bsize = x.size()[0]
-        h = x.size()[2]
-        w = x.size()[3]
+        l = x.size()[2]
         x_top = self.top_conv(x)
         x_center = self.center_conv(x)
         x_bottom = self.bottom_conv(x)
 
-        x_top = x_top.flatten(2)
+        #x_top = x_top.flatten(2)
         x_center = x_center.flatten(2).transpose(1, 2)
         x_bottom = x_bottom.flatten(2).transpose(1, 2)
 
         sp_map = torch.matmul(x_center, x_top)
-        sp_map = self.map_softmax(sp_map.view(bsize, -1)).view(bsize, h * w, h * w)
+        sp_map = self.map_softmax(sp_map.view(bsize, -1)).view(bsize, l, l)
         sp_map = torch.matmul(sp_map, x_bottom)
-        sp_map = sp_map.reshape(bsize, self.in_channels, h, w)
+        sp_map = sp_map.reshape(bsize, self.in_channels, l)
         x = x + sp_map
         x = self.out_conv(x)
         return x
@@ -43,14 +42,14 @@ class MFAB(nn.Module):
         # MFAB is just a modified version of SE-blocks, one for skip, one for input
         super(MFAB, self).__init__()
         self.hl_conv = nn.Sequential(
-            md.Conv2dReLU(
+            md.Conv1dReLU(
                 in_channels,
                 in_channels,
                 kernel_size=3,
                 padding=1,
                 use_batchnorm=use_batchnorm,
             ),
-            md.Conv2dReLU(
+            md.Conv1dReLU(
                 in_channels,
                 skip_channels,
                 kernel_size=1,
@@ -59,27 +58,27 @@ class MFAB(nn.Module):
         )
         reduced_channels = max(1, skip_channels // reduction)
         self.SE_ll = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(skip_channels, reduced_channels, 1),
+            nn.AdaptiveAvgPool1d(1),
+            nn.Conv1d(skip_channels, reduced_channels, 1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(reduced_channels, skip_channels, 1),
+            nn.Conv1d(reduced_channels, skip_channels, 1),
             nn.Sigmoid(),
         )
         self.SE_hl = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(skip_channels, reduced_channels, 1),
+            nn.AdaptiveAvgPool1d(1),
+            nn.Conv1d(skip_channels, reduced_channels, 1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(reduced_channels, skip_channels, 1),
+            nn.Conv1d(reduced_channels, skip_channels, 1),
             nn.Sigmoid(),
         )
-        self.conv1 = md.Conv2dReLU(
+        self.conv1 = md.Conv1dReLU(
             skip_channels + skip_channels,  # we transform C-prime form high level to C from skip connection
             out_channels,
             kernel_size=3,
             padding=1,
             use_batchnorm=use_batchnorm,
         )
-        self.conv2 = md.Conv2dReLU(
+        self.conv2 = md.Conv1dReLU(
             out_channels,
             out_channels,
             kernel_size=3,
@@ -104,14 +103,14 @@ class MFAB(nn.Module):
 class DecoderBlock(nn.Module):
     def __init__(self, in_channels, skip_channels, out_channels, use_batchnorm=True):
         super().__init__()
-        self.conv1 = md.Conv2dReLU(
+        self.conv1 = md.Conv1dReLU(
             in_channels + skip_channels,
             out_channels,
             kernel_size=3,
             padding=1,
             use_batchnorm=use_batchnorm,
         )
-        self.conv2 = md.Conv2dReLU(
+        self.conv2 = md.Conv1dReLU(
             out_channels,
             out_channels,
             kernel_size=3,

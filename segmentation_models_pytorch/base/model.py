@@ -11,14 +11,13 @@ class SegmentationModel(torch.nn.Module):
 
     def check_input_shape(self, x):
 
-        h, w = x.shape[-2:]
+        l = x.shape[-1]
         output_stride = self.encoder.output_stride
-        if h % output_stride != 0 or w % output_stride != 0:
-            new_h = (h // output_stride + 1) * output_stride if h % output_stride != 0 else h
-            new_w = (w // output_stride + 1) * output_stride if w % output_stride != 0 else w
+        if l % output_stride != 0:
+            new_l = (l // output_stride + 1) * output_stride if l % output_stride != 0 else l
             raise RuntimeError(
-                f"Wrong input shape height={h}, width={w}. Expected image height and width "
-                f"divisible by {output_stride}. Consider pad your images to shape ({new_h}, {new_w})."
+                f"Wrong input shape height={l}. Expected sequence length "
+                f"divisible by {output_stride}. Consider padding your sequences to shape ({new_l})."
             )
 
     def forward(self, x):
@@ -42,10 +41,10 @@ class SegmentationModel(torch.nn.Module):
         """Inference method. Switch model to `eval` mode, call `.forward(x)` with `torch.no_grad()`
 
         Args:
-            x: 4D torch tensor with shape (batch_size, channels, height, width)
+            x: #D torch tensor with shape (batch_size, channels, length)
 
         Return:
-            prediction: 4D torch tensor with shape (batch_size, classes, height, width)
+            prediction: 4D torch tensor with shape (batch_size, classes, length)
 
         """
         if self.training:

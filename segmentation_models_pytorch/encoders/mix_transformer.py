@@ -32,7 +32,7 @@ class Mlp(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
-        elif isinstance(m, nn.Conv2d):
+        elif isinstance(m, nn.Conv1d):
             fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
@@ -67,7 +67,7 @@ class Attention(nn.Module):
 
         self.sr_ratio = sr_ratio
         if sr_ratio > 1:
-            self.sr = nn.Conv2d(dim, dim, kernel_size=sr_ratio, stride=sr_ratio)
+            self.sr = nn.Conv1d(dim, dim, kernel_size=sr_ratio, stride=sr_ratio)
             self.norm = nn.LayerNorm(dim)
 
         self.apply(self._init_weights)
@@ -80,7 +80,7 @@ class Attention(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
-        elif isinstance(m, nn.Conv2d):
+        elif isinstance(m, nn.Conv1d):
             fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
@@ -153,7 +153,7 @@ class Block(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
-        elif isinstance(m, nn.Conv2d):
+        elif isinstance(m, nn.Conv1d):
             fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
@@ -179,7 +179,7 @@ class OverlapPatchEmbed(nn.Module):
         self.patch_size = patch_size
         self.H, self.W = img_size[0] // patch_size[0], img_size[1] // patch_size[1]
         self.num_patches = self.H * self.W
-        self.proj = nn.Conv2d(
+        self.proj = nn.Conv1d(
             in_chans,
             embed_dim,
             kernel_size=patch_size,
@@ -198,7 +198,7 @@ class OverlapPatchEmbed(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
-        elif isinstance(m, nn.Conv2d):
+        elif isinstance(m, nn.Conv1d):
             fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
@@ -346,7 +346,7 @@ class MixVisionTransformer(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
-        elif isinstance(m, nn.Conv2d):
+        elif isinstance(m, nn.Conv1d):
             fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
@@ -436,7 +436,7 @@ class MixVisionTransformer(nn.Module):
 class DWConv(nn.Module):
     def __init__(self, dim=768):
         super(DWConv, self).__init__()
-        self.dwconv = nn.Conv2d(dim, dim, 3, 1, 1, bias=True, groups=dim)
+        self.dwconv = nn.Conv1d(dim, dim, 3, 1, 1, bias=True, groups=dim)
 
     def forward(self, x, H, W):
         B, N, C = x.shape

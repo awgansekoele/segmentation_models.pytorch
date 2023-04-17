@@ -27,7 +27,7 @@ class Linknet(SegmentationModel):
             Default is 5
         encoder_weights: One of **None** (random initialization), **"imagenet"** (pre-training on ImageNet) and
             other pretrained weights (see table with available weights for each encoder_name)
-        decoder_use_batchnorm: If **True**, BatchNorm2d layer between Conv2D and Activation layers
+        decoder_use_batchnorm: If **True**, BatchNorm1d layer between Conv1d and Activation layers
             is used. If **"inplace"** InplaceABN will be used, allows to decrease memory consumption.
             Available options are **True, False, "inplace"**
         in_channels: A number of input channels for the model, default is 3 (RGB images)

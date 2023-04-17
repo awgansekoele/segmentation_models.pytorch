@@ -4,7 +4,7 @@ Attributes:
 
     _out_channels (list of int): specify number of channels for each encoder feature tensor
     _depth (int): specify number of stages in decoder (in other words number of downsampling operations)
-    _in_channels (int): default number of input channels in first Conv2d layer for encoder (usually 3)
+    _in_channels (int): default number of input channels in first Conv1d layer for encoder (usually 3)
 
 Methods:
 
@@ -24,7 +24,7 @@ Methods:
 """
 
 import torch.nn as nn
-from pretrainedmodels.models.inceptionv4 import InceptionV4, BasicConv2d
+from pretrainedmodels.models.inceptionv4 import InceptionV4, BasicConv1d
 from pretrainedmodels.models.inceptionv4 import pretrained_settings
 
 from ._base import EncoderMixin
@@ -40,10 +40,10 @@ class InceptionV4Encoder(InceptionV4, EncoderMixin):
 
         # correct paddings
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv1d):
                 if m.kernel_size == (3, 3):
                     m.padding = (1, 1)
-            if isinstance(m, nn.MaxPool2d):
+            if isinstance(m, nn.Maxpool1d):
                 m.padding = (1, 1)
 
         # remove linear layers

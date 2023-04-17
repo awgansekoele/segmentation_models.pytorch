@@ -4,7 +4,7 @@ Attributes:
 
     _out_channels (list of int): specify number of channels for each encoder feature tensor
     _depth (int): specify number of stages in decoder (in other words number of downsampling operations)
-    _in_channels (int): default number of input channels in first Conv2d layer for encoder (usually 3)
+    _in_channels (int): default number of input channels in first Conv1d layer for encoder (usually 3)
 
 Methods:
 
@@ -26,7 +26,6 @@ Methods:
 import re
 import torch.nn as nn
 
-from pretrainedmodels.models.torchvision_models import pretrained_settings
 from torchvision.models.densenet import DenseNet
 
 from ._base import EncoderMixin
@@ -106,7 +105,6 @@ class DenseNetEncoder(DenseNet, EncoderMixin):
 densenet_encoders = {
     "densenet121": {
         "encoder": DenseNetEncoder,
-        "pretrained_settings": pretrained_settings["densenet121"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1024, 1024),
             "num_init_features": 64,
@@ -116,7 +114,6 @@ densenet_encoders = {
     },
     "densenet169": {
         "encoder": DenseNetEncoder,
-        "pretrained_settings": pretrained_settings["densenet169"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1280, 1664),
             "num_init_features": 64,
@@ -126,7 +123,6 @@ densenet_encoders = {
     },
     "densenet201": {
         "encoder": DenseNetEncoder,
-        "pretrained_settings": pretrained_settings["densenet201"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1792, 1920),
             "num_init_features": 64,
@@ -136,7 +132,6 @@ densenet_encoders = {
     },
     "densenet161": {
         "encoder": DenseNetEncoder,
-        "pretrained_settings": pretrained_settings["densenet161"],
         "params": {
             "out_channels": (3, 96, 384, 768, 2112, 2208),
             "num_init_features": 96,

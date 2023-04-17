@@ -11,7 +11,7 @@ def patch_first_conv(model, new_in_channels, default_in_channels=3, pretrained=T
 
     # get first conv
     for module in model.modules():
-        if isinstance(module, nn.Conv2d) and module.in_channels == default_in_channels:
+        if isinstance(module, nn.Conv1d) and module.in_channels == default_in_channels:
             break
 
     weight = module.weight.detach()
@@ -38,9 +38,9 @@ def patch_first_conv(model, new_in_channels, default_in_channels=3, pretrained=T
 
 
 def replace_strides_with_dilation(module, dilation_rate):
-    """Patch Conv2d modules replacing strides with dilation"""
+    """Patch Conv1d modules replacing strides with dilation"""
     for mod in module.modules():
-        if isinstance(mod, nn.Conv2d):
+        if isinstance(mod, nn.Conv1d):
             mod.stride = (1, 1)
             mod.dilation = (dilation_rate, dilation_rate)
             kh, kw = mod.kernel_size

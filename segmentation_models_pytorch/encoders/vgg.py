@@ -4,7 +4,7 @@ Attributes:
 
     _out_channels (list of int): specify number of channels for each encoder feature tensor
     _depth (int): specify number of stages in decoder (in other words number of downsampling operations)
-    _in_channels (int): default number of input channels in first Conv2d layer for encoder (usually 3)
+    _in_channels (int): default number of input channels in first Conv1d layer for encoder (usually 3)
 
 Methods:
 
@@ -55,7 +55,7 @@ class VGGEncoder(VGG, EncoderMixin):
         stages = []
         stage_modules = []
         for module in self.features:
-            if isinstance(module, nn.MaxPool2d):
+            if isinstance(module, nn.Maxpool1d):
                 stages.append(nn.Sequential(*stage_modules))
                 stage_modules = []
             stage_modules.append(module)
