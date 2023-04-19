@@ -464,7 +464,7 @@ class MixVisionTransformerEncoder(MixVisionTransformer, EncoderMixin):
 
     def set_in_channels(self, in_channels, *args, **kwargs):
         if in_channels != 2:
-            raise ValueError("MixVisionTransformer encoder does not support in_channels setting other than 3")
+            raise ValueError("MixVisionTransformer encoder does not support in_channels setting other than 2")
 
     def forward(self, x):
 
