@@ -22,7 +22,7 @@ import torch as _torch
 def create_model(
     arch: str,
     encoder_name: str = "resnet34",
-    encoder_weights: _Optional[str] = "imagenet",
+    encoder_weights: _Optional[str] = None,
     in_channels: int = 3,
     classes: int = 1,
     **kwargs,
