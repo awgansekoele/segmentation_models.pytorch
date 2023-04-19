@@ -1,8 +1,10 @@
+from typing import Dict, Any
+
 import torch
 import torch.nn as nn
 
 
-def patch_first_conv(model, new_in_channels, default_in_channels=3, pretrained=True):
+def patch_first_conv(model, new_in_channels, default_in_channels=2, pretrained=True):
     """Change first convolution layer input channels.
     In case:
         in_channels == 1 or in_channels == 2 -> reuse original weights
@@ -49,3 +51,10 @@ def replace_strides_with_dilation(module, dilation_rate):
             # Kostyl for EfficientNet
             if hasattr(mod, "static_padding"):
                 mod.static_padding = nn.Identity()
+
+def _overwrite_named_param(kwargs: Dict[str, Any], param: str, new_value) -> None:
+    if param in kwargs:
+        if kwargs[param] != new_value:
+            raise ValueError(f"The parameter '{param}' expected value {new_value} but got {kwargs[param]} instead.")
+    else:
+        kwargs[param] = new_value

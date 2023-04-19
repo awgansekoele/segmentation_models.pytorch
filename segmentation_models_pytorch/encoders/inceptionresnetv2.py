@@ -25,9 +25,8 @@ Methods:
 
 import torch.nn as nn
 from pretrainedmodels.models.inceptionresnetv2 import InceptionResNetV2
-from pretrainedmodels.models.inceptionresnetv2 import pretrained_settings
 
-from ._base import EncoderMixin
+from segmentation_models_pytorch.encoders._base import EncoderMixin
 
 
 class InceptionResNetV2Encoder(InceptionResNetV2, EncoderMixin):
@@ -36,15 +35,15 @@ class InceptionResNetV2Encoder(InceptionResNetV2, EncoderMixin):
 
         self._out_channels = out_channels
         self._depth = depth
-        self._in_channels = 3
+        self._in_channels = 2
 
         # correct paddings
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
-                if m.kernel_size == (3, 3):
-                    m.padding = (1, 1)
-            if isinstance(m, nn.Maxpool1d):
-                m.padding = (1, 1)
+                if m.kernel_size == (3, ):
+                    m.padding = (1, )
+            if isinstance(m, nn.MaxPool1d):
+                m.padding = (1, )
 
         # remove linear layers
         del self.avgpool_1a
@@ -58,11 +57,11 @@ class InceptionResNetV2Encoder(InceptionResNetV2, EncoderMixin):
     def get_stages(self):
         return [
             nn.Identity(),
-            nn.Sequential(self.Conv1d_1a, self.Conv1d_2a, self.Conv1d_2b),
-            nn.Sequential(self.maxpool_3a, self.Conv1d_3b, self.Conv1d_4a),
+            nn.Sequential(self.conv1d_1a, self.conv1d_2a, self.conv1d_2b),
+            nn.Sequential(self.maxpool_3a, self.conv1d_3b, self.conv1d_4a),
             nn.Sequential(self.maxpool_5a, self.mixed_5b, self.repeat),
             nn.Sequential(self.mixed_6a, self.repeat_1),
-            nn.Sequential(self.mixed_7a, self.repeat_2, self.block8, self.Conv1d_7b),
+            nn.Sequential(self.mixed_7a, self.repeat_2, self.block8, self.conv1d_7b),
         ]
 
     def forward(self, x):
@@ -85,7 +84,15 @@ class InceptionResNetV2Encoder(InceptionResNetV2, EncoderMixin):
 inceptionresnetv2_encoders = {
     "inceptionresnetv2": {
         "encoder": InceptionResNetV2Encoder,
-        "pretrained_settings": pretrained_settings["inceptionresnetv2"],
         "params": {"out_channels": (3, 64, 192, 320, 1088, 1536), "num_classes": 1000},
     }
 }
+
+if __name__ == '__main__':
+    # test the DPNEncoder
+    import torch
+    from segmentation_models_pytorch.encoders import get_encoder
+    model = get_encoder('inceptionresnetv2')
+    outputs = model(torch.randn(2, 2, 1024))
+    for output in outputs:
+        print(output.size())

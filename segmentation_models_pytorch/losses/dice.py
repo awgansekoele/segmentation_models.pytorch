@@ -3,11 +3,12 @@ from typing import Optional, List
 import torch
 import torch.nn.functional as F
 from torch.nn.modules.loss import _Loss
-from ._functional import soft_dice_score, to_tensor
-from .constants import BINARY_MODE, MULTICLASS_MODE, MULTILABEL_MODE
+from segmentation_models_pytorch.losses._functional import soft_dice_score, to_tensor
+from segmentation_models_pytorch.losses.constants import BINARY_MODE, MULTICLASS_MODE, MULTILABEL_MODE
 
 __all__ = ["DiceLoss"]
 
+from segmentation_models_pytorch.decoders.unet.model import Unet
 
 class DiceLoss(_Loss):
     def __init__(
@@ -128,3 +129,12 @@ class DiceLoss(_Loss):
 
     def compute_score(self, output, target, smooth=0.0, eps=1e-7, dims=None) -> torch.Tensor:
         return soft_dice_score(output, target, smooth, eps, dims)
+
+if __name__ == '__main__':
+    model = Unet(encoder_name='resnet18', classes=4)
+    output = model(torch.randn(2, 2, 1024))
+    binary_target = torch.randint(0, 1, (2, 4, 1024))
+    target = torch.randint(0, 4, (2, 1024))
+    print(output.size())
+    loss_fn = DiceLoss(mode='multiclass')
+    print(loss_fn(output, target))

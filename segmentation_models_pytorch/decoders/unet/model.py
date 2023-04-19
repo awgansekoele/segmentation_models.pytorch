@@ -1,12 +1,14 @@
 from typing import Optional, Union, List
 
+import torch
+
 from segmentation_models_pytorch.encoders import get_encoder
 from segmentation_models_pytorch.base import (
     SegmentationModel,
     SegmentationHead,
     ClassificationHead,
 )
-from .decoder import UnetDecoder
+from segmentation_models_pytorch.decoders.unet.decoder import UnetDecoder
 
 
 class Unet(SegmentationModel):
@@ -57,12 +59,11 @@ class Unet(SegmentationModel):
         self,
         encoder_name: str = "resnet34",
         encoder_depth: int = 5,
-        encoder_weights: Optional[str] = "imagenet",
         decoder_use_batchnorm: bool = True,
         decoder_channels: List[int] = (256, 128, 64, 32, 16),
         decoder_attention_type: Optional[str] = None,
-        in_channels: int = 3,
-        classes: int = 1,
+        in_channels: int = 2,
+        classes: int = 4,
         activation: Optional[Union[str, callable]] = None,
         aux_params: Optional[dict] = None,
     ):
@@ -72,7 +73,6 @@ class Unet(SegmentationModel):
             encoder_name,
             in_channels=in_channels,
             depth=encoder_depth,
-            weights=encoder_weights,
         )
 
         self.decoder = UnetDecoder(
@@ -98,3 +98,8 @@ class Unet(SegmentationModel):
 
         self.name = "u-{}".format(encoder_name)
         self.initialize()
+
+if __name__ == '__main__':
+    model = Unet(encoder_name='resnet18')
+    output = model(torch.randn(2, 2, 1024))
+    print(output.size())

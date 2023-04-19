@@ -14,6 +14,8 @@ __all__ = [
     "wing_loss",
 ]
 
+from segmentation_models_pytorch.decoders.unet.model import Unet
+
 
 def to_tensor(x, dtype=None) -> torch.Tensor:
     if isinstance(x, torch.Tensor):
@@ -34,14 +36,14 @@ def to_tensor(x, dtype=None) -> torch.Tensor:
 
 
 def focal_loss_with_logits(
-    output: torch.Tensor,
-    target: torch.Tensor,
-    gamma: float = 2.0,
-    alpha: Optional[float] = 0.25,
-    reduction: str = "mean",
-    normalized: bool = False,
-    reduced_threshold: Optional[float] = None,
-    eps: float = 1e-6,
+        output: torch.Tensor,
+        target: torch.Tensor,
+        gamma: float = 2.0,
+        alpha: Optional[float] = 0.25,
+        reduction: str = "mean",
+        normalized: bool = False,
+        reduced_threshold: Optional[float] = None,
+        eps: float = 1e-6,
 ) -> torch.Tensor:
     """Compute binary focal loss between target and output logits.
     See :class:`~pytorch_toolbelt.losses.FocalLoss` for details.
@@ -97,13 +99,13 @@ def focal_loss_with_logits(
 
 
 def softmax_focal_loss_with_logits(
-    output: torch.Tensor,
-    target: torch.Tensor,
-    gamma: float = 2.0,
-    reduction="mean",
-    normalized=False,
-    reduced_threshold: Optional[float] = None,
-    eps: float = 1e-6,
+        output: torch.Tensor,
+        target: torch.Tensor,
+        gamma: float = 2.0,
+        reduction="mean",
+        normalized=False,
+        reduced_threshold: Optional[float] = None,
+        eps: float = 1e-6,
 ) -> torch.Tensor:
     """Softmax version of focal loss between target and output logits.
     See :class:`~pytorch_toolbelt.losses.FocalLoss` for details.
@@ -150,11 +152,11 @@ def softmax_focal_loss_with_logits(
 
 
 def soft_jaccard_score(
-    output: torch.Tensor,
-    target: torch.Tensor,
-    smooth: float = 0.0,
-    eps: float = 1e-7,
-    dims=None,
+        output: torch.Tensor,
+        target: torch.Tensor,
+        smooth: float = 0.0,
+        eps: float = 1e-7,
+        dims=None,
 ) -> torch.Tensor:
     assert output.size() == target.size()
     if dims is not None:
@@ -170,11 +172,11 @@ def soft_jaccard_score(
 
 
 def soft_dice_score(
-    output: torch.Tensor,
-    target: torch.Tensor,
-    smooth: float = 0.0,
-    eps: float = 1e-7,
-    dims=None,
+        output: torch.Tensor,
+        target: torch.Tensor,
+        smooth: float = 0.0,
+        eps: float = 1e-7,
+        dims=None,
 ) -> torch.Tensor:
     assert output.size() == target.size()
     if dims is not None:
@@ -188,13 +190,13 @@ def soft_dice_score(
 
 
 def soft_tversky_score(
-    output: torch.Tensor,
-    target: torch.Tensor,
-    alpha: float,
-    beta: float,
-    smooth: float = 0.0,
-    eps: float = 1e-7,
-    dims=None,
+        output: torch.Tensor,
+        target: torch.Tensor,
+        alpha: float,
+        beta: float,
+        smooth: float = 0.0,
+        eps: float = 1e-7,
+        dims=None,
 ) -> torch.Tensor:
     assert output.size() == target.size()
     if dims is not None:
@@ -238,12 +240,12 @@ def wing_loss(output: torch.Tensor, target: torch.Tensor, width=5, curvature=0.5
 
 
 def label_smoothed_nll_loss(
-    lprobs: torch.Tensor,
-    target: torch.Tensor,
-    epsilon: float,
-    ignore_index=None,
-    reduction="mean",
-    dim=-1,
+        lprobs: torch.Tensor,
+        target: torch.Tensor,
+        epsilon: float,
+        ignore_index=None,
+        reduction="mean",
+        dim=-1,
 ) -> torch.Tensor:
     """NLL loss with label smoothing
 
@@ -284,3 +286,14 @@ def label_smoothed_nll_loss(
     eps_i = epsilon / lprobs.size(dim)
     loss = (1.0 - epsilon) * nll_loss + eps_i * smooth_loss
     return loss
+
+
+if __name__ == '__main__':
+    model = Unet(encoder_name='resnet18', classes=4)
+    output = model(torch.randn(2, 2, 1024))
+    binary_target = torch.randint(0, 1, (2, 4, 1024))
+    target = torch.randint(0, 4, (2, 1024))
+    print(output.size())
+    print(focal_loss_with_logits(output, binary_target))
+    print(softmax_focal_loss_with_logits(output, target))
+    print(soft_jaccard_score(output, binary_target))

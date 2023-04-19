@@ -9,8 +9,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from . import _utils as utils
-from ._base import EncoderMixin
+from segmentation_models_pytorch.encoders import _utils as utils
+from segmentation_models_pytorch.encoders._base import EncoderMixin
 
 __all__ = ["MobileOne", "reparameterize_model"]
 
@@ -38,13 +38,13 @@ class SEBlock(nn.Module):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """Apply forward pass."""
-        b, c, h, w = inputs.size()
-        x = F.avg_pool2d(inputs, kernel_size=[h, w])
+        b, c, l = inputs.size()
+        x = F.avg_pool1d(inputs, kernel_size=l)
         x = self.reduce(x)
         x = F.relu(x)
         x = self.expand(x)
         x = torch.sigmoid(x)
-        x = x.view(-1, c, 1, 1)
+        x = x.view(-1, c, 1)
         return inputs * x
 
 
@@ -236,12 +236,12 @@ class MobileOneBlock(nn.Module):
             if not hasattr(self, "id_tensor"):
                 input_dim = self.in_channels // self.groups
                 kernel_value = torch.zeros(
-                    (self.in_channels, input_dim, self.kernel_size, self.kernel_size),
+                    (self.in_channels, input_dim, self.kernel_size),
                     dtype=branch.weight.dtype,
                     device=branch.weight.device,
                 )
                 for i in range(self.in_channels):
-                    kernel_value[i, i % input_dim, self.kernel_size // 2, self.kernel_size // 2] = 1
+                    kernel_value[i, i % input_dim, self.kernel_size // 2] = 1
                 self.id_tensor = kernel_value
             kernel = self.id_tensor
             running_mean = branch.running_mean
@@ -250,7 +250,7 @@ class MobileOneBlock(nn.Module):
             beta = branch.bias
             eps = branch.eps
         std = (running_var + eps).sqrt()
-        t = (gamma / std).reshape(-1, 1, 1, 1)
+        t = (gamma / std).reshape(-1, 1, 1)
         return kernel * t, beta - running_mean * gamma / std
 
     def _conv_bn(self, kernel_size: int, padding: int) -> nn.Sequential:
@@ -436,15 +436,6 @@ def reparameterize_model(model: torch.nn.Module) -> nn.Module:
 mobileone_encoders = {
     "mobileone_s0": {
         "encoder": MobileOne,
-        "pretrained_settings": {
-            "imagenet": {
-                "mean": [0.485, 0.456, 0.406],
-                "std": [0.229, 0.224, 0.225],
-                "url": "https://docs-assets.developer.apple.com/ml-research/datasets/mobileone/mobileone_s0_unfused.pth.tar",  # noqa
-                "input_space": "RGB",
-                "input_range": [0, 1],
-            },
-        },
         "params": {
             "out_channels": (3, 48, 48, 128, 256, 1024),
             "width_multipliers": (0.75, 1.0, 1.0, 2.0),
@@ -454,15 +445,6 @@ mobileone_encoders = {
     },
     "mobileone_s1": {
         "encoder": MobileOne,
-        "pretrained_settings": {
-            "imagenet": {
-                "mean": [0.485, 0.456, 0.406],
-                "std": [0.229, 0.224, 0.225],
-                "url": "https://docs-assets.developer.apple.com/ml-research/datasets/mobileone/mobileone_s1_unfused.pth.tar",  # noqa
-                "input_space": "RGB",
-                "input_range": [0, 1],
-            },
-        },
         "params": {
             "out_channels": (3, 64, 96, 192, 512, 1280),
             "width_multipliers": (1.5, 1.5, 2.0, 2.5),
@@ -471,15 +453,6 @@ mobileone_encoders = {
     },
     "mobileone_s2": {
         "encoder": MobileOne,
-        "pretrained_settings": {
-            "imagenet": {
-                "mean": [0.485, 0.456, 0.406],
-                "std": [0.229, 0.224, 0.225],
-                "url": "https://docs-assets.developer.apple.com/ml-research/datasets/mobileone/mobileone_s2_unfused.pth.tar",  # noqa
-                "input_space": "RGB",
-                "input_range": [0, 1],
-            },
-        },
         "params": {
             "out_channels": (3, 64, 96, 256, 640, 2048),
             "width_multipliers": (1.5, 2.0, 2.5, 4.0),
@@ -488,15 +461,6 @@ mobileone_encoders = {
     },
     "mobileone_s3": {
         "encoder": MobileOne,
-        "pretrained_settings": {
-            "imagenet": {
-                "mean": [0.485, 0.456, 0.406],
-                "std": [0.229, 0.224, 0.225],
-                "url": "https://docs-assets.developer.apple.com/ml-research/datasets/mobileone/mobileone_s3_unfused.pth.tar",  # noqa
-                "input_space": "RGB",
-                "input_range": [0, 1],
-            },
-        },
         "params": {
             "out_channels": (3, 64, 128, 320, 768, 2048),
             "width_multipliers": (2.0, 2.5, 3.0, 4.0),
@@ -505,15 +469,6 @@ mobileone_encoders = {
     },
     "mobileone_s4": {
         "encoder": MobileOne,
-        "pretrained_settings": {
-            "imagenet": {
-                "mean": [0.485, 0.456, 0.406],
-                "std": [0.229, 0.224, 0.225],
-                "url": "https://docs-assets.developer.apple.com/ml-research/datasets/mobileone/mobileone_s4_unfused.pth.tar",  # noqa
-                "input_space": "RGB",
-                "input_range": [0, 1],
-            },
-        },
         "params": {
             "out_channels": (3, 64, 192, 448, 896, 2048),
             "width_multipliers": (3.0, 3.5, 3.5, 4.0),
@@ -522,3 +477,13 @@ mobileone_encoders = {
         },
     },
 }
+
+
+if __name__ == '__main__':
+    import torch
+    from segmentation_models_pytorch.encoders import get_encoder
+
+    encoder = get_encoder('mobileone_s4')
+    outputs = encoder(torch.randn(2, 2, 1024))
+    for output in outputs:
+        print(output.size())

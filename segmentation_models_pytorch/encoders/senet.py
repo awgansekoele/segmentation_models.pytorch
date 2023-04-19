@@ -30,9 +30,8 @@ from pretrainedmodels.models.senet import (
     SEBottleneck,
     SEResNetBottleneck,
     SEResNeXtBottleneck,
-    pretrained_settings,
 )
-from ._base import EncoderMixin
+from segmentation_models_pytorch.encoders._base import EncoderMixin
 
 
 class SENetEncoder(SENet, EncoderMixin):
@@ -41,7 +40,7 @@ class SENetEncoder(SENet, EncoderMixin):
 
         self._out_channels = out_channels
         self._depth = depth
-        self._in_channels = 3
+        self._in_channels = 2
 
         del self.last_linear
         del self.avg_pool
@@ -75,7 +74,6 @@ class SENetEncoder(SENet, EncoderMixin):
 senet_encoders = {
     "senet154": {
         "encoder": SENetEncoder,
-        "pretrained_settings": pretrained_settings["senet154"],
         "params": {
             "out_channels": (3, 128, 256, 512, 1024, 2048),
             "block": SEBottleneck,
@@ -88,7 +86,6 @@ senet_encoders = {
     },
     "se_resnet50": {
         "encoder": SENetEncoder,
-        "pretrained_settings": pretrained_settings["se_resnet50"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1024, 2048),
             "block": SEResNetBottleneck,
@@ -105,7 +102,6 @@ senet_encoders = {
     },
     "se_resnet101": {
         "encoder": SENetEncoder,
-        "pretrained_settings": pretrained_settings["se_resnet101"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1024, 2048),
             "block": SEResNetBottleneck,
@@ -122,7 +118,6 @@ senet_encoders = {
     },
     "se_resnet152": {
         "encoder": SENetEncoder,
-        "pretrained_settings": pretrained_settings["se_resnet152"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1024, 2048),
             "block": SEResNetBottleneck,
@@ -139,7 +134,6 @@ senet_encoders = {
     },
     "se_resnext50_32x4d": {
         "encoder": SENetEncoder,
-        "pretrained_settings": pretrained_settings["se_resnext50_32x4d"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1024, 2048),
             "block": SEResNeXtBottleneck,
@@ -156,7 +150,6 @@ senet_encoders = {
     },
     "se_resnext101_32x4d": {
         "encoder": SENetEncoder,
-        "pretrained_settings": pretrained_settings["se_resnext101_32x4d"],
         "params": {
             "out_channels": (3, 64, 256, 512, 1024, 2048),
             "block": SEResNeXtBottleneck,
@@ -172,3 +165,14 @@ senet_encoders = {
         },
     },
 }
+
+
+
+if __name__ == '__main__':
+    import torch
+    from segmentation_models_pytorch.encoders import get_encoder
+
+    encoder = get_encoder('se_resnext101_32x4d')
+    outputs = encoder(torch.randn(2, 2, 1024))
+    for output in outputs:
+        print(output.size())

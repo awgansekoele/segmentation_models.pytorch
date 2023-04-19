@@ -1,10 +1,9 @@
 import re
 import torch.nn as nn
 
-from pretrainedmodels.models.xception import pretrained_settings
 from pretrainedmodels.models.xception import Xception
 
-from ._base import EncoderMixin
+from segmentation_models_pytorch.encoders._base import EncoderMixin
 
 
 class XceptionEncoder(Xception, EncoderMixin):
@@ -13,13 +12,12 @@ class XceptionEncoder(Xception, EncoderMixin):
 
         self._out_channels = out_channels
         self._depth = depth
-        self._in_channels = 3
+        self._in_channels = 2
 
         # modify padding to maintain output shape
-        self.conv1.padding = (1, 1)
-        self.conv2.padding = (1, 1)
+        self.conv1.padding = (1, )
+        self.conv2.padding = (1, )
 
-        del self.fc
 
     def make_dilated(self, *args, **kwargs):
         raise ValueError(
@@ -29,7 +27,7 @@ class XceptionEncoder(Xception, EncoderMixin):
     def get_stages(self):
         return [
             nn.Identity(),
-            nn.Sequential(self.conv1, self.bn1, self.relu, self.conv2, self.bn2, self.relu),
+            nn.Sequential(self.conv1, self.bn1, self.relu1, self.conv2, self.bn2, self.relu2),
             self.block1,
             self.block2,
             nn.Sequential(
@@ -43,7 +41,7 @@ class XceptionEncoder(Xception, EncoderMixin):
                 self.block10,
                 self.block11,
             ),
-            nn.Sequential(self.block12, self.conv3, self.bn3, self.relu, self.conv4, self.bn4),
+            nn.Sequential(self.block12, self.conv3, self.bn3, self.relu3, self.conv4, self.bn4),
         ]
 
     def forward(self, x):
@@ -67,9 +65,17 @@ class XceptionEncoder(Xception, EncoderMixin):
 xception_encoders = {
     "xception": {
         "encoder": XceptionEncoder,
-        "pretrained_settings": pretrained_settings["xception"],
         "params": {
             "out_channels": (3, 64, 128, 256, 728, 2048),
         },
     },
 }
+
+if __name__ == '__main__':
+    import torch
+    from segmentation_models_pytorch.encoders import get_encoder
+
+    encoder = get_encoder('xception')
+    outputs = encoder(torch.randn(2, 2, 1024))
+    for output in outputs:
+        print(output.size())

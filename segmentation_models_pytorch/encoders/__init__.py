@@ -48,7 +48,7 @@ encoders.update(mix_transformer_encoders)
 encoders.update(mobileone_encoders)
 
 
-def get_encoder(name, in_channels=3, depth=5, weights=None, output_stride=32, **kwargs):
+def get_encoder(name, in_channels=2, depth=5, weights=None, output_stride=32, **kwargs):
 
     if name.startswith("tu-"):
         name = name[3:]

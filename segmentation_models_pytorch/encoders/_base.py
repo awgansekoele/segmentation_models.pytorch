@@ -25,7 +25,7 @@ class EncoderMixin:
 
     def set_in_channels(self, in_channels, pretrained=True):
         """Change first convolution channels"""
-        if in_channels == 3:
+        if in_channels == 2:
             return
 
         self._in_channels = in_channels

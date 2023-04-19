@@ -33,15 +33,15 @@ class Mlp(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
         elif isinstance(m, nn.Conv1d):
-            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out = m.kernel_size[0] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
             if m.bias is not None:
                 m.bias.data.zero_()
 
-    def forward(self, x, H, W):
+    def forward(self, x, L):
         x = self.fc1(x)
-        x = self.dwconv(x, H, W)
+        x = self.dwconv(x, L)
         x = self.act(x)
         x = self.drop(x)
         x = self.fc2(x)
@@ -81,18 +81,18 @@ class Attention(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
         elif isinstance(m, nn.Conv1d):
-            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out = m.kernel_size[0] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
             if m.bias is not None:
                 m.bias.data.zero_()
 
-    def forward(self, x, H, W):
+    def forward(self, x, L):
         B, N, C = x.shape
         q = self.q(x).reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
 
         if self.sr_ratio > 1:
-            x_ = x.permute(0, 2, 1).reshape(B, C, H, W)
+            x_ = x.permute(0, 2, 1).reshape(B, C, L)
             x_ = self.sr(x_).reshape(B, C, -1).permute(0, 2, 1)
             x_ = self.norm(x_)
             kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
@@ -154,15 +154,15 @@ class Block(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
         elif isinstance(m, nn.Conv1d):
-            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out = m.kernel_size[0] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
             if m.bias is not None:
                 m.bias.data.zero_()
 
-    def forward(self, x, H, W):
-        x = x + self.drop_path(self.attn(self.norm1(x), H, W))
-        x = x + self.drop_path(self.mlp(self.norm2(x), H, W))
+    def forward(self, x, L):
+        x = x + self.drop_path(self.attn(self.norm1(x), L))
+        x = x + self.drop_path(self.mlp(self.norm2(x), L))
 
         return x
 
@@ -170,21 +170,19 @@ class Block(nn.Module):
 class OverlapPatchEmbed(nn.Module):
     """Image to Patch Embedding"""
 
-    def __init__(self, img_size=224, patch_size=7, stride=4, in_chans=3, embed_dim=768):
+    def __init__(self, img_size=1024, patch_size=15, stride=8, in_chans=2, embed_dim=768):
         super().__init__()
-        img_size = to_2tuple(img_size)
-        patch_size = to_2tuple(patch_size)
 
         self.img_size = img_size
         self.patch_size = patch_size
-        self.H, self.W = img_size[0] // patch_size[0], img_size[1] // patch_size[1]
-        self.num_patches = self.H * self.W
+        self.L = img_size // patch_size
+        self.num_patches = self.L
         self.proj = nn.Conv1d(
             in_chans,
             embed_dim,
             kernel_size=patch_size,
             stride=stride,
-            padding=(patch_size[0] // 2, patch_size[1] // 2),
+            padding=patch_size // 2,
         )
         self.norm = nn.LayerNorm(embed_dim)
 
@@ -199,7 +197,7 @@ class OverlapPatchEmbed(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
         elif isinstance(m, nn.Conv1d):
-            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out = m.kernel_size[0] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
             if m.bias is not None:
@@ -207,19 +205,19 @@ class OverlapPatchEmbed(nn.Module):
 
     def forward(self, x):
         x = self.proj(x)
-        _, _, H, W = x.shape
+        _, _, L = x.shape
         x = x.flatten(2).transpose(1, 2)
         x = self.norm(x)
 
-        return x, H, W
+        return x, L
 
 
 class MixVisionTransformer(nn.Module):
     def __init__(
         self,
-        img_size=224,
+        seq_length=1024,
         patch_size=16,
-        in_chans=3,
+        in_chans=2,
         num_classes=1000,
         embed_dims=[64, 128, 256, 512],
         num_heads=[1, 2, 4, 8],
@@ -239,16 +237,16 @@ class MixVisionTransformer(nn.Module):
 
         # patch_embed
         self.patch_embed1 = OverlapPatchEmbed(
-            img_size=img_size, patch_size=7, stride=4, in_chans=in_chans, embed_dim=embed_dims[0]
+            img_size=seq_length, patch_size=15, stride=8, in_chans=in_chans, embed_dim=embed_dims[0]
         )
         self.patch_embed2 = OverlapPatchEmbed(
-            img_size=img_size // 4, patch_size=3, stride=2, in_chans=embed_dims[0], embed_dim=embed_dims[1]
+            img_size=seq_length // 4, patch_size=5, stride=4, in_chans=embed_dims[0], embed_dim=embed_dims[1]
         )
         self.patch_embed3 = OverlapPatchEmbed(
-            img_size=img_size // 8, patch_size=3, stride=2, in_chans=embed_dims[1], embed_dim=embed_dims[2]
+            img_size=seq_length // 8, patch_size=5, stride=4, in_chans=embed_dims[1], embed_dim=embed_dims[2]
         )
         self.patch_embed4 = OverlapPatchEmbed(
-            img_size=img_size // 16, patch_size=3, stride=2, in_chans=embed_dims[2], embed_dim=embed_dims[3]
+            img_size=seq_length // 16, patch_size=5, stride=4, in_chans=embed_dims[2], embed_dim=embed_dims[3]
         )
 
         # transformer encoder
@@ -347,7 +345,7 @@ class MixVisionTransformer(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
         elif isinstance(m, nn.Conv1d):
-            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out = m.kernel_size[0] * m.out_channels
             fan_out //= m.groups
             m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
             if m.bias is not None:
@@ -393,35 +391,35 @@ class MixVisionTransformer(nn.Module):
         outs = []
 
         # stage 1
-        x, H, W = self.patch_embed1(x)
+        x, L = self.patch_embed1(x)
         for i, blk in enumerate(self.block1):
-            x = blk(x, H, W)
+            x = blk(x, L)
         x = self.norm1(x)
-        x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
+        x = x.reshape(B, L, -1).permute(0, 2, 1).contiguous()
         outs.append(x)
 
         # stage 2
-        x, H, W = self.patch_embed2(x)
+        x, L = self.patch_embed2(x)
         for i, blk in enumerate(self.block2):
-            x = blk(x, H, W)
+            x = blk(x, L)
         x = self.norm2(x)
-        x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
+        x = x.reshape(B, L, -1).permute(0, 2, 1).contiguous()
         outs.append(x)
 
         # stage 3
-        x, H, W = self.patch_embed3(x)
+        x, L = self.patch_embed3(x)
         for i, blk in enumerate(self.block3):
-            x = blk(x, H, W)
+            x = blk(x, L)
         x = self.norm3(x)
-        x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
+        x = x.reshape(B, L, -1).permute(0, 2, 1).contiguous()
         outs.append(x)
 
         # stage 4
-        x, H, W = self.patch_embed4(x)
+        x, L = self.patch_embed4(x)
         for i, blk in enumerate(self.block4):
-            x = blk(x, H, W)
+            x = blk(x, L)
         x = self.norm4(x)
-        x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
+        x = x.reshape(B, L, -1).permute(0, 2, 1).contiguous()
         outs.append(x)
 
         return outs
@@ -438,9 +436,9 @@ class DWConv(nn.Module):
         super(DWConv, self).__init__()
         self.dwconv = nn.Conv1d(dim, dim, 3, 1, 1, bias=True, groups=dim)
 
-    def forward(self, x, H, W):
+    def forward(self, x, L):
         B, N, C = x.shape
-        x = x.transpose(1, 2).view(B, C, H, W)
+        x = x.transpose(1, 2).view(B, C, L)
         x = self.dwconv(x)
         x = x.flatten(2).transpose(1, 2)
 
@@ -451,7 +449,7 @@ class DWConv(nn.Module):
 # End of NVIDIA code
 # ---------------------------------------------------------------
 
-from ._base import EncoderMixin  # noqa E402
+from segmentation_models_pytorch.encoders._base import EncoderMixin  # noqa E402
 
 
 class MixVisionTransformerEncoder(MixVisionTransformer, EncoderMixin):
@@ -459,20 +457,20 @@ class MixVisionTransformerEncoder(MixVisionTransformer, EncoderMixin):
         super().__init__(**kwargs)
         self._out_channels = out_channels
         self._depth = depth
-        self._in_channels = 3
+        self._in_channels = 2
 
     def make_dilated(self, *args, **kwargs):
         raise ValueError("MixVisionTransformer encoder does not support dilated mode")
 
     def set_in_channels(self, in_channels, *args, **kwargs):
-        if in_channels != 3:
+        if in_channels != 2:
             raise ValueError("MixVisionTransformer encoder does not support in_channels setting other than 3")
 
     def forward(self, x):
 
         # create dummy output for the first block
-        B, C, H, W = x.shape
-        dummy = torch.empty([B, 0, H // 2, W // 2], dtype=x.dtype, device=x.device)
+        B, C, L = x.shape
+        dummy = torch.empty([B, 0, L // 2], dtype=x.dtype, device=x.device)
 
         return [x, dummy] + self.forward_features(x)[: self._depth - 1]
 
@@ -482,23 +480,12 @@ class MixVisionTransformerEncoder(MixVisionTransformer, EncoderMixin):
         return super().load_state_dict(state_dict)
 
 
-def get_pretrained_cfg(name):
-    return {
-        "url": "https://github.com/qubvel/segmentation_models.pytorch/releases/download/v0.0.2/{}.pth".format(name),
-        "input_space": "RGB",
-        "input_size": [3, 224, 224],
-        "input_range": [0, 1],
-        "mean": [0.485, 0.456, 0.406],
-        "std": [0.229, 0.224, 0.225],
-    }
+
 
 
 mix_transformer_encoders = {
     "mit_b0": {
         "encoder": MixVisionTransformerEncoder,
-        "pretrained_settings": {
-            "imagenet": get_pretrained_cfg("mit_b0"),
-        },
         "params": dict(
             out_channels=(3, 0, 32, 64, 160, 256),
             patch_size=4,
@@ -515,9 +502,6 @@ mix_transformer_encoders = {
     },
     "mit_b1": {
         "encoder": MixVisionTransformerEncoder,
-        "pretrained_settings": {
-            "imagenet": get_pretrained_cfg("mit_b1"),
-        },
         "params": dict(
             out_channels=(3, 0, 64, 128, 320, 512),
             patch_size=4,
@@ -534,9 +518,6 @@ mix_transformer_encoders = {
     },
     "mit_b2": {
         "encoder": MixVisionTransformerEncoder,
-        "pretrained_settings": {
-            "imagenet": get_pretrained_cfg("mit_b2"),
-        },
         "params": dict(
             out_channels=(3, 0, 64, 128, 320, 512),
             patch_size=4,
@@ -553,9 +534,6 @@ mix_transformer_encoders = {
     },
     "mit_b3": {
         "encoder": MixVisionTransformerEncoder,
-        "pretrained_settings": {
-            "imagenet": get_pretrained_cfg("mit_b3"),
-        },
         "params": dict(
             out_channels=(3, 0, 64, 128, 320, 512),
             patch_size=4,
@@ -572,9 +550,6 @@ mix_transformer_encoders = {
     },
     "mit_b4": {
         "encoder": MixVisionTransformerEncoder,
-        "pretrained_settings": {
-            "imagenet": get_pretrained_cfg("mit_b4"),
-        },
         "params": dict(
             out_channels=(3, 0, 64, 128, 320, 512),
             patch_size=4,
@@ -591,9 +566,6 @@ mix_transformer_encoders = {
     },
     "mit_b5": {
         "encoder": MixVisionTransformerEncoder,
-        "pretrained_settings": {
-            "imagenet": get_pretrained_cfg("mit_b5"),
-        },
         "params": dict(
             out_channels=(3, 0, 64, 128, 320, 512),
             patch_size=4,
@@ -609,3 +581,13 @@ mix_transformer_encoders = {
         ),
     },
 }
+
+
+if __name__ == '__main__':
+    import torch
+    from segmentation_models_pytorch.encoders import get_encoder
+
+    encoder = get_encoder('mit_b1')
+    outputs = encoder(torch.randn(2, 2, 1024))
+    for output in outputs:
+        print(output.size())

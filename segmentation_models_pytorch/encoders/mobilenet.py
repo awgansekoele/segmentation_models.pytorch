@@ -26,7 +26,7 @@ Methods:
 import torchvision
 import torch.nn as nn
 
-from ._base import EncoderMixin
+from segmentation_models_pytorch.encoders._base import EncoderMixin
 
 
 class MobileNetV2Encoder(torchvision.models.MobileNetV2, EncoderMixin):
@@ -34,7 +34,7 @@ class MobileNetV2Encoder(torchvision.models.MobileNetV2, EncoderMixin):
         super().__init__(**kwargs)
         self._depth = depth
         self._out_channels = out_channels
-        self._in_channels = 3
+        self._in_channels = 2
         del self.classifier
 
     def get_stages(self):
@@ -66,17 +66,20 @@ class MobileNetV2Encoder(torchvision.models.MobileNetV2, EncoderMixin):
 mobilenet_encoders = {
     "mobilenet_v2": {
         "encoder": MobileNetV2Encoder,
-        "pretrained_settings": {
-            "imagenet": {
-                "mean": [0.485, 0.456, 0.406],
-                "std": [0.229, 0.224, 0.225],
-                "url": "https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
-                "input_space": "RGB",
-                "input_range": [0, 1],
-            },
-        },
         "params": {
             "out_channels": (3, 16, 24, 32, 96, 1280),
         },
     },
 }
+
+
+
+if __name__ == '__main__':
+    import torch
+    from segmentation_models_pytorch.encoders import get_encoder
+
+    encoder = get_encoder('mobilenet_v2')
+    outputs = encoder(torch.randn(2, 2, 1024))
+    for output in outputs:
+        print(output.size())
+

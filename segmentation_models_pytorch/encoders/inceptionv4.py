@@ -25,9 +25,11 @@ Methods:
 
 import torch.nn as nn
 from pretrainedmodels.models.inceptionv4 import InceptionV4, BasicConv1d
-from pretrainedmodels.models.inceptionv4 import pretrained_settings
 
-from ._base import EncoderMixin
+from segmentation_models_pytorch.encoders._base import EncoderMixin
+
+
+# from ._base import EncoderMixin
 
 
 class InceptionV4Encoder(InceptionV4, EncoderMixin):
@@ -36,15 +38,15 @@ class InceptionV4Encoder(InceptionV4, EncoderMixin):
         self._stage_idxs = stage_idxs
         self._out_channels = out_channels
         self._depth = depth
-        self._in_channels = 3
+        self._in_channels = 2
 
         # correct paddings
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
-                if m.kernel_size == (3, 3):
-                    m.padding = (1, 1)
-            if isinstance(m, nn.Maxpool1d):
-                m.padding = (1, 1)
+                if m.kernel_size == 3 or m.kernel_size == (3, ):
+                    m.padding = 1
+            if isinstance(m, nn.MaxPool1d):
+                m.padding = 1
 
         # remove linear layers
         del self.last_linear
@@ -58,10 +60,10 @@ class InceptionV4Encoder(InceptionV4, EncoderMixin):
         return [
             nn.Identity(),
             self.features[: self._stage_idxs[0]],
-            self.features[self._stage_idxs[0] : self._stage_idxs[1]],
-            self.features[self._stage_idxs[1] : self._stage_idxs[2]],
-            self.features[self._stage_idxs[2] : self._stage_idxs[3]],
-            self.features[self._stage_idxs[3] :],
+            self.features[self._stage_idxs[0]: self._stage_idxs[1]],
+            self.features[self._stage_idxs[1]: self._stage_idxs[2]],
+            self.features[self._stage_idxs[2]: self._stage_idxs[3]],
+            self.features[self._stage_idxs[3]:],
         ]
 
     def forward(self, x):
@@ -84,11 +86,19 @@ class InceptionV4Encoder(InceptionV4, EncoderMixin):
 inceptionv4_encoders = {
     "inceptionv4": {
         "encoder": InceptionV4Encoder,
-        "pretrained_settings": pretrained_settings["inceptionv4"],
         "params": {
             "stage_idxs": (3, 5, 9, 15),
             "out_channels": (3, 64, 192, 384, 1024, 1536),
-            "num_classes": 1001,
+            "num_classes": 1000,
         },
     }
 }
+
+if __name__ == '__main__':
+    import torch
+    from segmentation_models_pytorch.encoders import get_encoder
+
+    encoder = get_encoder('inceptionv4')
+    outputs = encoder(torch.randn(2, 2, 1024))
+    for output in outputs:
+        print(output.size())
