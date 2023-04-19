@@ -63,7 +63,7 @@ class UnetPlusPlus(SegmentationModel):
         decoder_use_batchnorm: bool = True,
         decoder_channels: List[int] = (256, 128, 64, 32, 16),
         decoder_attention_type: Optional[str] = None,
-        in_channels: int = 3,
+        in_channels: int = 2,
         classes: int = 1,
         activation: Optional[Union[str, callable]] = None,
         aux_params: Optional[dict] = None,
@@ -77,7 +77,6 @@ class UnetPlusPlus(SegmentationModel):
             encoder_name,
             in_channels=in_channels,
             depth=encoder_depth,
-            weights=encoder_weights,
         )
 
         self.decoder = UnetPlusPlusDecoder(
