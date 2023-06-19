@@ -178,7 +178,7 @@ class ResNet(nn.Module):
             self,
             block: Type[Union[BasicBlock, Bottleneck]],
             layers: List[int],
-            in_channels: int = 2,
+            in_channels: int = 16,
             num_classes: int = 1000,
             zero_init_residual: bool = False,
             groups: int = 1,
@@ -583,7 +583,7 @@ class ResNetEncoder(ResNet, EncoderMixin):
         super().__init__(**kwargs)
         self._depth = depth
         self._out_channels = out_channels
-        self._in_channels = 2
+        self._in_channels = 16
 
         del self.fc
         del self.avgpool
@@ -618,7 +618,7 @@ resnet_encoders = {
     "resnet18": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 64, 128, 256, 512),
+            "out_channels": (32, 64, 64, 128, 256, 512),
             "block": BasicBlock,
             "layers": [2, 2, 2, 2],
         },
@@ -626,7 +626,7 @@ resnet_encoders = {
     "resnet34": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 64, 128, 256, 512),
+            "out_channels": (32, 64, 64, 128, 256, 512),
             "block": BasicBlock,
             "layers": [3, 4, 6, 3],
         },
@@ -634,7 +634,7 @@ resnet_encoders = {
     "resnet50": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 6, 3],
         },
@@ -642,7 +642,7 @@ resnet_encoders = {
     "resnet101": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 23, 3],
         },
@@ -650,7 +650,7 @@ resnet_encoders = {
     "resnet152": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 8, 36, 3],
         },
@@ -658,7 +658,7 @@ resnet_encoders = {
     "resnext50_32x4d": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 6, 3],
             "groups": 32,
@@ -668,7 +668,7 @@ resnet_encoders = {
     "resnext101_32x4d": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 23, 3],
             "groups": 32,
@@ -678,7 +678,7 @@ resnet_encoders = {
     "resnext101_32x8d": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 23, 3],
             "groups": 32,
@@ -688,7 +688,7 @@ resnet_encoders = {
     "resnext101_32x16d": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 23, 3],
             "groups": 32,
@@ -698,7 +698,7 @@ resnet_encoders = {
     "resnext101_32x32d": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 23, 3],
             "groups": 32,
@@ -708,7 +708,7 @@ resnet_encoders = {
     "resnext101_32x48d": {
         "encoder": ResNetEncoder,
         "params": {
-            "out_channels": (2, 64, 256, 512, 1024, 2048),
+            "out_channels": (32, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,
             "layers": [3, 4, 23, 3],
             "groups": 32,
