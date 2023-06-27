@@ -178,7 +178,7 @@ class ResNet(nn.Module):
             self,
             block: Type[Union[BasicBlock, Bottleneck]],
             layers: List[int],
-            in_channels: int = 16,
+            in_channels: int = 2,
             num_classes: int = 1000,
             zero_init_residual: bool = False,
             groups: int = 1,
@@ -583,7 +583,7 @@ class ResNetEncoder(ResNet, EncoderMixin):
         super().__init__(**kwargs)
         self._depth = depth
         self._out_channels = out_channels
-        self._in_channels = 16
+        self._in_channels = 2
 
         del self.fc
         del self.avgpool
@@ -615,6 +615,14 @@ class ResNetEncoder(ResNet, EncoderMixin):
 
 
 resnet_encoders = {
+    "resnet_small": {
+        "encoder": ResNetEncoder,
+        "params": {
+            "out_channels": (32, 64, 64, 128, 256, 512),
+            "block": BasicBlock,
+            "layers": [1, 1, 1, 1],
+        },
+    },
     "resnet18": {
         "encoder": ResNetEncoder,
         "params": {

@@ -246,6 +246,7 @@ def label_smoothed_nll_loss(
         ignore_index=None,
         reduction="mean",
         dim=-1,
+        topk: float = None,
 ) -> torch.Tensor:
     """NLL loss with label smoothing
 
@@ -276,6 +277,10 @@ def label_smoothed_nll_loss(
         nll_loss = nll_loss.squeeze(dim)
         smooth_loss = smooth_loss.squeeze(dim)
 
+    if topk < 1:
+        nll_loss, _ = nll_loss.topk(int(topk * nll_loss.size(-1)), dim=-1)
+        smooth_loss, _ = smooth_loss.topk(int(topk * smooth_loss.size(-1)), dim=-1)
+
     if reduction == "sum":
         nll_loss = nll_loss.sum()
         smooth_loss = smooth_loss.sum()
@@ -290,10 +295,11 @@ def label_smoothed_nll_loss(
 
 if __name__ == '__main__':
     model = Unet(encoder_name='resnet18', classes=4)
-    output = model(torch.randn(2, 2, 1024))
+    output = model(torch.randn(2, 16, 1024))
     binary_target = torch.randint(0, 1, (2, 4, 1024))
     target = torch.randint(0, 4, (2, 1024))
     print(output.size())
     print(focal_loss_with_logits(output, binary_target))
     print(softmax_focal_loss_with_logits(output, target))
     print(soft_jaccard_score(output, binary_target))
+    print(label_smoothed_nll_loss(F.log_softmax(output), target, 0, dim=1, topk=0.1))
